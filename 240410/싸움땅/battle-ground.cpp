@@ -167,9 +167,13 @@ void winner_move(int player_num)
     {
         int maxDamge = 0, idx = 0;
         bool flag = false;
+        int now = p[player_num].gun_stat;
+        vector<int> temp;
+
         for (int i = 0; i < map[cx][cy].size(); i++)
-        {
-            if (maxDamge < map[cx][cy][i])
+        {            
+            temp.push_back(map[cx][cy][i]);
+            if (now < map[cx][cy][i])
             {
                 flag = true;
                 maxDamge = map[cx][cy][i];
@@ -181,8 +185,21 @@ void winner_move(int player_num)
         {
             // 획득 및 맵갱신
             p[player_num].haveGun = true;
-            p[player_num].gun_stat = map[cx][cy][idx];
-            map[cx][cy][idx] = 0;
+            p[player_num].gun_stat = maxDamge;
+            
+            map[cx][cy].clear();
+            
+            for (int i = 0; i < temp.size(); i++)
+            {
+                if (temp[i] != maxDamge)
+                {
+                    map[cx][cy].push_back(temp[i]);
+                }
+                else
+                {
+                    map[cx][cy].push_back(now);
+                }
+            }
             //map[cx][cy].erase(map[cx][cy].begin() + idx);
         }
     }
@@ -349,7 +366,7 @@ vector<int> Solution()
 {
     vector<int> ret;
     
-    for (int i = 0; i < k; i++)
+    for (int i = 0; i < m; i++)
     {
         Move();
     }
