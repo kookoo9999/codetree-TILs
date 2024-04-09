@@ -105,12 +105,17 @@ void loser_move(int player_num , int winner_num)
     int nx = cx + dx[dir];
     int ny = cy + dy[dir];
 
-    p[player_num].haveGun = false;
-    p[player_num].gun_stat = 0;
-
-    // 90도 회전 및 레인지 검사
-    if ((nx < 0 || ny < 0 || nx >= n || ny >= n))
+    if (p[player_num].haveGun)
     {
+        p[player_num].haveGun = false;
+        //map[cx][cy].clear();
+        map[cx][cy].push_back(p[player_num].gun_stat);
+        p[player_num].gun_stat = 0;
+    }
+    
+    if (player_map[nx][ny].size() > 0 || nx < 0 || ny < 0 || nx >= n || ny >= n)
+    {
+        // 90도 회전 및 레인지 검사    
         for (int i = 0; i < 4; i++)
         {
             dir = Rotate_dir(dir);
@@ -119,8 +124,9 @@ void loser_move(int player_num , int winner_num)
 
             if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
             if (player_map[nx][ny].size() == 0) break;
-        }        
+        }
     }
+
 
     // 이동 좌표 갱신
     p[player_num].x = nx;
