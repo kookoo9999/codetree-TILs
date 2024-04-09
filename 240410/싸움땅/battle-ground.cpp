@@ -366,7 +366,7 @@ vector<int> Solution()
 {
     vector<int> ret;
     
-    for (int i = 0; i < m; i++)
+    for (int i = 0; i < k; i++)
     {
         Move();
     }
