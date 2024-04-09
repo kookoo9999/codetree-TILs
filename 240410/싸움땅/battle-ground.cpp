@@ -105,6 +105,9 @@ void loser_move(int player_num , int winner_num)
     int nx = cx + dx[dir];
     int ny = cy + dy[dir];
 
+    p[player_num].haveGun = false;
+    p[player_num].gun_stat = 0;
+
     // 90도 회전 및 레인지 검사
     if ((nx < 0 || ny < 0 || nx >= n || ny >= n))
     {
@@ -253,15 +256,15 @@ void Move()
             {
                 if (map[nx][ny].size() > 0)
                 {
-                    int now = p[i].gun_stat;
-                    int dix = 0;
+                    int now = p[i].gun_stat;                    
+                    idx = 0;
                     bool flag = false;
                     // 공격력 높은 총 확인
                     for (int j = 0; j < map[nx][ny].size(); j++)
                     {
                         if (map[nx][ny][j] > now)
                         {
-                            p[j].gun_stat = maxDamge;
+                            maxDamge = map[nx][ny][j];
                             idx = j;
                             flag = true;
                         }
@@ -269,10 +272,11 @@ void Move()
                     if (flag)
                     {
                         // 공격력 높은총 제거
-                        map[nx][ny][idx] = 0;
-                        //map[nx][ny].erase(map[nx][ny].begin() + idx);
-                        // 가지고 있던 총 추가
+                        map[nx][ny].clear();
                         map[nx][ny].push_back(now);
+                        
+                        // 가지고 있던 총 추가
+                        p[i].gun_stat = maxDamge;
                     }
                     
                 }
@@ -302,6 +306,7 @@ void Move()
             int vs_total = (p[vs_player].base_stat + p[vs_player].gun_stat);
             
             // 총 공격력이 같으면
+            //bool flag = false;
             if (now_total == vs_total)
             {
                 if (p[now_player].base_stat < p[vs_player].base_stat)
@@ -322,17 +327,16 @@ void Move()
                 
                 // 진 플레이어 무브
                 loser_move(vs_player , now_player);                
-                p[vs_player].haveGun = false;
+                //p[vs_player].haveGun = false;
                 winner_move(now_player);
-                
-                
+
             }
             else
             {
                 p[vs_player].point += (vs_total - now_total);
 
                 loser_move(now_player , vs_player);
-                p[now_player].haveGun = false;
+                //p[now_player].haveGun = false;
                 winner_move(vs_player);
             }
 
