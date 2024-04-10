@@ -93,7 +93,7 @@ void player_move(int player_num)
     p[player_num].dir = dir;
 
     player_map[nx][ny].push_back(p[player_num].num);
-    player_map[cx][cy].erase(player_map[cx][cy].begin());
+    player_map[cx][cy].clear();
 }
 
 void loser_move(int player_num , int winner_num)
@@ -218,21 +218,7 @@ void Move()
     for (int i = 0; i < m; i++)
     {
         player_move(i);
-        //int dir = p[i].dir;
-        //int cx = p[i].x;
-        //int cy = p[i].y;
-        //
-        //int nx = cx + dx[dir];
-        //int ny = cy + dy[dir];
-
-        //// 정반대로
-        //if (nx < 0 || ny < 0 || nx >= n || ny >= n)
-        //{
-        //    dir = Switch_dir(dir);
-        //    nx = cx + dx[dir];
-        //    ny = cy + dy[dir];
-        //}
-
+        
         int nx = p[i].x;
         int ny = p[i].y;
         
