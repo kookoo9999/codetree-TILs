@@ -1,20 +1,20 @@
 #include <iostream>
 #include <vector>
-
+#include <algorithm>
 using namespace std;
 
 struct Player
 {
-    int x, y, num, dir,base_stat=0 , gun_stat=0 , point=0;
+    int x, y, num, dir, base_stat = 0, gun_stat = 0, point = 0;
     bool haveGun = false;
 };
 
 vector<Player> p;
 vector<int> map[21][21];
-vector<int> player_map[21][21];
+int player_map[21][21];
 int dx[] = { -1,0,1,0 };
 int dy[] = { 0,1,0,-1 };
-bool fight = false;
+
 
 int n, m, k; //보드사이즈 , 플레이어 수 , 라운드 수
 
@@ -67,314 +67,216 @@ int Rotate_dir(int input)
     default:
         break;
     }
-    
+
     return ret;
 }
 
-void player_move(int player_num)
+bool CanMove(int x, int y, int dir)
 {
-    int dir = p[player_num].dir;
-    int cx = p[player_num].x;
-    int cy = p[player_num].y;
-
-    int nx = cx + dx[dir];
-    int ny = cy + dy[dir];
-
-    // 정반대로
-    if (nx < 0 || ny < 0 || nx >= n || ny >= n)
+    if (x < 0 || y < 0 || x >= n || y >= n)
     {
-        dir = Switch_dir(dir);
-        nx = cx + dx[dir];
-        ny = cy + dy[dir];
+        return false;
     }
 
-    p[player_num].x = nx;
-    p[player_num].y = ny;
-    p[player_num].dir = dir;
-
-    player_map[nx][ny].push_back(p[player_num].num);
-    player_map[cx][cy].clear();
+    return true;
 }
 
-void loser_move(int player_num , int winner_num)
+void Player_Move(int idx)
 {
-    int dir = p[player_num].dir;
-    int cx = p[player_num].x;
-    int cy = p[player_num].y;
+    //player_map[p[idx].x][p[idx].y] = 0;
 
-    int nx = cx + dx[dir];
-    int ny = cy + dy[dir];
+    int nx = p[idx].x + dx[p[idx].dir];
+    int ny = p[idx].y + dy[p[idx].dir];
 
-    if (p[player_num].haveGun)
+    if (!CanMove(nx,ny, p[idx].dir))
     {
-        p[player_num].haveGun = false;
-        //map[cx][cy].clear();
-        map[cx][cy].push_back(p[player_num].gun_stat);
-        p[player_num].gun_stat = 0;
-    }
-    
-    if (player_map[nx][ny].size() > 0 || nx < 0 || ny < 0 || nx >= n || ny >= n)
-    {
-        // 90도 회전 및 레인지 검사    
-        for (int i = 0; i < 4; i++)
-        {
-            dir = Rotate_dir(dir);
-            nx = cx + dx[dir];
-            ny = cy + dy[dir];
-
-            if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
-            if (player_map[nx][ny].size() == 0) break;
-        }
+        p[idx].dir = Switch_dir(p[idx].dir);
     }
 
+    p[idx].x += dx[p[idx].dir];
+    p[idx].y += dy[p[idx].dir];
+    //player_map[p[idx].x][p[idx].y] = p[idx].num;
+}
 
-    // 이동 좌표 갱신
-    p[player_num].x = nx;
-    p[player_num].y = ny;
-    p[player_num].dir = dir;
-
-    // 총 확인
-    if (map[nx][ny].size() > 0)
+int IsPlayer(int x, int y)
+{
+    if (player_map[x][y] != 0)
     {
-        int maxDamge = 0, idx = 0;
-        bool flag = false;
-        for (int i = 0; i < map[nx][ny].size(); i++)
-        {
-            if (maxDamge < map[nx][ny][i])
-            {
-                maxDamge = map[nx][ny][i];
-                idx = i;
-                flag = true;
-            }
-        }
-        if (flag)
-        {
-            // 획득 및 맵갱신
-            p[player_num].haveGun = true;
-            p[player_num].gun_stat = map[nx][ny][idx];
-            map[nx][ny][idx] = 0;
-            //map[nx][ny].erase(map[nx][ny].begin() + idx);
-        }
-        
+        return player_map[x][y]-1;
     }
-    player_map[cx][cy].clear();
-    player_map[nx][ny].push_back(p[player_num].num);
-    player_map[cx][cy].push_back(p[winner_num].num);
-    
+
+    return -1;
+}
+
+void GetGun(int x, int y,int idx)
+{
+    if (p[idx].gun_stat>0)
+    {        
+        map[x][y].push_back(p[idx].gun_stat);
+    }
+
+    sort(map[x][y].rbegin(), map[x][y].rend());
+    p[idx].gun_stat = map[x][y][0];
+    map[x][y].erase(map[x][y].begin());
     
 }
 
-void winner_move(int player_num)
+pair<int, int> Fight(int a,int b)
 {
-    int cx = p[player_num].x;
-    int cy = p[player_num].y;
+    // 승자 , 패자
+    pair<int, int> ret;
+    
+    int aSum = p[a].base_stat + p[a].gun_stat;
+    int bSum = p[b].base_stat + p[b].gun_stat;
+    bool drawFlag = false;
 
-    if (map[cx][cy].size() > 0)
+    if (aSum == bSum)
     {
-        int maxDamge = 0, idx = 0;
-        bool flag = false;
-        int now = p[player_num].gun_stat;
-        vector<int> temp;
-
-        for (int i = 0; i < map[cx][cy].size(); i++)
-        {            
-            temp.push_back(map[cx][cy][i]);
-            if (now < map[cx][cy][i])
-            {
-                flag = true;
-                maxDamge = map[cx][cy][i];
-                idx = i;
-            }
-        }
-
-        if (flag)
+        drawFlag = true;
+        if (p[a].base_stat > p[b].base_stat)
         {
-            // 획득 및 맵갱신
-            p[player_num].haveGun = true;
-            p[player_num].gun_stat = maxDamge;
-            
-            map[cx][cy].clear();
-            
-            for (int i = 0; i < temp.size(); i++)
-            {
-                if (temp[i] != maxDamge)
-                {
-                    map[cx][cy].push_back(temp[i]);
-                }
-                else
-                {
-                    map[cx][cy].push_back(now);
-                }
-            }
-            //map[cx][cy].erase(map[cx][cy].begin() + idx);
+            ret.first = a;
+            ret.second = b;
         }
+        else
+        {
+            ret.first = b;
+            ret.second = a;
+        }
+    }
+
+    else if (aSum > bSum)
+    {
+        ret.first = a;
+        ret.second = b;
+    }
+    else
+    {
+        ret.first = b;
+        ret.second = a;
+    }
+
+    if (!drawFlag)
+    {
+        int point = abs(aSum - bSum);
+        p[ret.first].point += point;
+    }
+    
+
+    return ret;
+}
+
+void loser_move(int idx)
+{
+    int cx = p[idx].x;
+    int cy = p[idx].y;
+
+    if (p[idx].gun_stat>0)
+    {            
+        map[cx][cy].push_back(p[idx].gun_stat);
+        sort(map[cx][cy].rbegin(), map[cx][cy].rend());
+        p[idx].gun_stat = 0;
+    }
+
+    int x = p[idx].x, y = p[idx].y, dir = p[idx].dir;
+
+    for (int i = 0; i < 4; i++)
+    {
+        int nx = x + dx[dir];
+        int ny = y + dy[dir];
+
+        if ((player_map[nx][ny] != 0) || !CanMove(nx, ny, dir))
+        {
+            dir = Rotate_dir(dir);            
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    p[idx].x += dx[dir];
+    p[idx].y += dy[dir];
+    p[idx].dir = dir;
+    //player_map[cx][cy] = 0;
+    player_map[p[idx].x][p[idx].y] = p[idx].num;
+
+    if (map[p[idx].x][p[idx].y].size() > 0)
+    {
+        GetGun(p[idx].x, p[idx].y, idx);
     }
     
 }
 
-void Move()
+void winner_move(int idx)
 {
-    // 플레이어 수만큼
+    player_map[p[idx].x][p[idx].y] = idx + 1;
+
+    if(map[p[idx].x][p[idx].y].size()>0)   GetGun(p[idx].x, p[idx].y, idx);   
+    
+}
+
+void Simulation()
+{
     for (int i = 0; i < m; i++)
     {
-        player_move(i);
-        
-        int nx = p[i].x;
-        int ny = p[i].y;
-        
+        int cx = p[i].x;
+        int cy = p[i].y;
 
-        // 플레이어 없음
-        if (player_map[nx][ny].size() == 1)
-        {
-            int maxDamge = 0 , idx =0;
+        //1-1
+        Player_Move(i);
 
-            // 가진 총 없으면
-            if (!p[i].haveGun)
+        //2-1
+        int x, y;
+        x = p[i].x, y = p[i].y;
+
+        int stayPeople = IsPlayer(x, y);
+
+        if (stayPeople == -1)
+        {            
+            if (map[x][y].size() > 0)
             {
-                // 맵에 총이 있으면
-                if (map[nx][ny].size() > 0)
-                {
-                    bool flag = false;
-                    // 공격력 높은 총 확인
-                    for (int j = 0; j < map[nx][ny].size(); j++)
-                    {
-                        if (map[nx][ny][j] > maxDamge)
-                        {
-                            
-                            maxDamge = map[nx][ny][j];
-                            idx = j;
-                            flag = true;
-                        }
-                    }
-                    if (flag)
-                    {
-                        p[i].haveGun = true;
-                        p[i].gun_stat = maxDamge;
+                GetGun(x, y, i);
+            }            
+            player_map[x][y] = i + 1;
+            player_map[cx][cy]=0;
+        }
 
-                        // 공격력 높은총 제거
-                        map[nx][ny][idx] = 0;
-                        //map[nx][ny].erase(map[nx][ny].begin() + idx);
-                    }
-                    
-                }
-                
-            }
+        //2-2-1
+        else
+        {  
+            player_map[cx][cy] = 0;
+            auto temp = Fight(i, stayPeople);
+            int winner = temp.first;
+            int loser = temp.second;
 
-            // 총 있으면
-            else
-            {
-                if (map[nx][ny].size() > 0)
-                {
-                    int now = p[i].gun_stat;                    
-                    idx = 0;
-                    bool flag = false;
-                    // 공격력 높은 총 확인
-                    for (int j = 0; j < map[nx][ny].size(); j++)
-                    {
-                        if (map[nx][ny][j] > now)
-                        {
-                            maxDamge = map[nx][ny][j];
-                            idx = j;
-                            flag = true;
-                        }
-                    }
-                    if (flag)
-                    {
-                        // 공격력 높은총 제거
-                        map[nx][ny].clear();
-                        map[nx][ny].push_back(now);
-                        
-                        // 가지고 있던 총 추가
-                        p[i].gun_stat = maxDamge;
-                    }
-                    
-                }
-                
-            }
-
-            
+            loser_move(loser);
+            winner_move(winner);
         }
         
-        // 플레이어 있음
-        if (player_map[nx][ny].size() > 1)
-        {
-            // 싸움
-            int now_player=0, vs_player=0;
-
-            for (int j = 0; j < player_map[nx][ny].size(); j++)
-            {
-                if (j == 0) now_player = player_map[nx][ny][j] -1;
-                if (j == 1) vs_player = player_map[nx][ny][j] -1;
-            }
-            
-
-            // 이기는 플레이어 1로 설정 후 비교
-            int win_player = 1;
-
-            int now_total = (p[now_player].base_stat + p[now_player].gun_stat);
-            int vs_total = (p[vs_player].base_stat + p[vs_player].gun_stat);
-            
-            // 총 공격력이 같으면
-            //bool flag = false;
-            if (now_total == vs_total)
-            {
-                if (p[now_player].base_stat < p[vs_player].base_stat)
-                {
-                    win_player = 2;
-                }
-            }
-            else
-            {
-                if (now_total < vs_total) win_player = 2;
-            }
-
-            // 이긴 플레이어 및 진플레이어 해당내용 수행
-            if (win_player == 1)
-            {
-                // 이긴사람 포인트 추가
-                p[now_player].point += (now_total - vs_total);
-                
-                // 진 플레이어 무브
-                loser_move(vs_player , now_player);                
-                //p[vs_player].haveGun = false;
-                winner_move(now_player);
-
-            }
-            else
-            {
-                p[vs_player].point += (vs_total - now_total);
-
-                loser_move(now_player , vs_player);
-                //p[now_player].haveGun = false;
-                winner_move(vs_player);
-            }
-
-            
-        }
     }
+    
 }
 
 vector<int> Solution()
 {
     vector<int> ret;
-    
+
     for (int i = 0; i < k; i++)
     {
-        Move();
+        Simulation();
     }
-    
+
     for (int i = 0; i < m; i++)
     {
-        int pt = p[i].point;
-        ret.push_back(pt);
+        ret.push_back(p[i].point);
     }
 
     return ret;
 }
 
-int main() 
+int main()
 {
-    // 여기에 코드를 작성해주세요.
 
     cin >> n >> m >> k;
 
@@ -384,8 +286,8 @@ int main()
         {
             int input;
             cin >> input;
-            map[i][j].push_back(input);
-        }        
+            if(input>0) map[i][j].push_back(input);
+        }
     }
 
     for (int i = 0; i < m; i++)
@@ -393,18 +295,17 @@ int main()
         int x, y, d, s;
         cin >> x >> y >> d >> s;
         x--, y--;
-        player_map[x][y].push_back(i+1);
+        player_map[x][y]=(i + 1);
 
-        Player temp({ x,y, i+1,d,s, 0, false}); // x ,y , number , direction , base stat, total stat , score
+        Player temp({ x,y, i + 1,d,s, 0, false }); // x ,y , number , direction , base stat, total stat , score
         p.push_back(temp);
     }
 
     vector<int> ans = Solution();
-   
+
     for (int i = 0; i < m; i++)
     {
         printf("%d ", ans[i]);
     }
-
     return 0;
 }
