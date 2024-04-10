@@ -239,7 +239,7 @@ int Solution()
     bool stopflag = false;
     int min = 0;    
     
-    while (!stopflag)
+    while (1)
     {
         min++;
 
@@ -247,7 +247,7 @@ int Solution()
         MoveAll();
 
         // 2
-        if (UpdateMap() == m) stopflag=true;
+        if (UpdateMap() == m) return min;
         
         // 3
         if(min <= m) InsertPlayer(min-1);
