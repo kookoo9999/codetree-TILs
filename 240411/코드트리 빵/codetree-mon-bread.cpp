@@ -12,16 +12,31 @@ struct Player
     bool arrive = false;
 };
 
+struct Person
+{
+    int x, y;
+};
+
 struct Board
 {
     int x, y, cnt;
 };
 
+struct Mart
+{
+    int x, y;
+    bool arrive = false;
+};
+
 int map[MAX][MAX] = { 0, };
+bool visited[MAX][MAX] = { false, };
 vector<Player> p;
+vector<Person> Persons;
 vector<pair<int, int>> base;
+vector<Mart> Marts;
 int n, m;
 
+int dist[MAX][MAX] = { 9999, };
 int dx[] = { -1,0,0,1 };
 int dy[] = { 0,-1,1,0 };
 
@@ -46,7 +61,7 @@ void Input()
         int x, y;
         cin >> x >> y;
         x--, y--;
-        p.push_back({ -1,-1,x,y ,-1,false});
+        Marts.push_back({ x,y,false });
     }
 }
 
@@ -61,8 +76,6 @@ int BFS(int x,int y , int tx, int ty)
 
     while (!q.empty())
     {   
-        
-        
         int cx = q.front().x, cy = q.front().y, cnt = q.front().cnt;
 
         if (cx == tx && cy == ty) return cnt;
@@ -177,6 +190,8 @@ void Move(int idx)
     
 }
 
+
+
 bool IsInMap(int idx)
 {
     if (!(p[idx].cx >= 0 && p[idx].cy >= 0 && p[idx].cx < n && p[idx].cy < n)) return false;    
@@ -226,6 +241,77 @@ int UpdateMap()
     return arriveCnt;
 }
 
+void Init_Dist()
+{
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            dist[i][j] = 9999;
+        }
+    }
+}
+
+void Bfs(int x, int y)
+{
+
+    queue<pair<pair<int, int>, int>> Q;
+    Q.push({ {x, y}, 0 });
+    dist[x][y] = 0;
+
+    while (!Q.empty())
+    {
+        int cx = Q.front().first.first;
+        int cy = Q.front().first.second;
+        int time = Q.front().second;
+        Q.pop();
+
+        for (int i = 0; i < 4; i++)
+        {
+            int nx = cx + dx[i];
+            int ny = cy + dy[i];
+
+            if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+            if (visited[nx][ny] == 1) continue;
+            if (dist[nx][ny] != 9999) continue;
+
+            dist[nx][ny] = time + 1;
+            Q.push({ {nx, ny}, time + 1 });
+        }
+
+    }
+
+}
+
+void Move_bfs(int idx)
+{
+    int tx = Marts[idx].x;
+    int ty = Marts[idx].y;
+
+    Init_Dist();
+    Bfs(tx, ty);
+
+    int x = Persons[idx].x;
+    int y = Persons[idx].y;
+    int min = 9999;
+
+    for (int i = 0; i < 4; i++)
+    {
+        int nx = x + dx[i];
+        int ny = y + dy[i];
+
+        if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+        if (visited[nx][ny]) continue;
+
+        if (dist[nx][ny] < min) 
+        {
+            min = dist[nx][ny];
+            Persons[idx].x = nx;
+            Persons[idx].y = ny;
+        }
+    }
+}
+
 
 
 void InsertPlayer(int time)
@@ -241,6 +327,42 @@ void InsertPlayer(int time)
     map[t.first][t.second] = -1;
 }
 
+
+
+void Push_Player(int time)
+{
+    int tx = Marts[time].x;
+    int ty = Marts[time].y;
+    int min = 9999, x, y;
+    Init_Dist();
+    Bfs(tx, ty);
+    for (int i = n-1; i >= 0; i--)
+    {
+        for (int j = n-1; j >= 0; j--)
+        {
+            if (map[i][j] == 1 && dist[i][j] <= min)
+            {
+                min = dist[i][j];
+                x = i;
+                y = j;
+            }
+        }
+    }
+
+    Persons.push_back({ x,y });
+    visited[x][y] = true;
+
+}
+
+bool CheckAllArrive()
+{
+    for (auto s : Marts)
+    {
+        if (!s.arrive) return false;
+    }
+    return true;
+}
+
 int Solution()
 {
     bool stopflag = false;
@@ -251,13 +373,32 @@ int Solution()
         min++;
 
         // 1
-        MoveAll();
+        for (int i = 0; i < Persons.size(); i++)
+        {
+            if (Marts[i].arrive) continue;
+            Move_bfs(i);
+        }
 
         // 2
-        if (UpdateMap() == m) return min;
+        for (int i = 0; i < Persons.size(); i++)
+        {
+            if (Marts[i].arrive) continue;
+
+            if (Persons[i].x == Marts[i].x && Persons[i].y == Marts[i].y)
+            {
+                Marts[i].arrive = true;
+                visited[Marts[i].x][Marts[i].y] = 1;
+            }
+        }
+
+        if (CheckAllArrive()) break;;
         
         // 3
-        if(min <= m) InsertPlayer(min-1);
+        if (min <= m)
+        {
+            //InsertPlayer(min - 1);
+            Push_Player(min-1);
+        }
 
 
     }
