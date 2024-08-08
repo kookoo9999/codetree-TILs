@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include <memory>
+#include <memory.h>
 #include <queue>
 
 using namespace std;
