@@ -5,7 +5,7 @@
 
 using namespace std;
 
-int k, m, ans = 0 , mode = 0; 
+int k, m, ans = 0, mode = 0;
 bool visited[5][5];
 int map[5][5];
 int temp_map[5][5];
@@ -14,25 +14,27 @@ int dy[] = { 0,1,0,-1 };
 queue<int> nums;
 vector<pair<int, int>> delPoints;;
 
-void Rotate(int x1,int y1 , int cnt)
+void Rotate(int x1, int y1, int cnt)
 {
 	int size = 3;
 	int x = x1 - 1;
 	int y = y1 - 1;
-	int temp[5][5];	
+	int temp[5][5];
 	memcpy(temp, map, sizeof(map));
+
 	for (int it = 0; it < cnt; it++)
 	{
 		for (int i = 0; i < size; i++)
 		{
 			for (int j = 0; j < size; j++)
 			{
-				temp[x + j][y + size -i - 1] = map[x + i][y + j];
+				temp[x + j][y + size - i - 1] = temp_map[x + i][y + j];
 			}
 		}
+		memcpy(temp_map, temp, sizeof(temp));
 	}
-	
-	memcpy(temp_map, temp, sizeof(temp));
+
+	//memcpy(temp_map, temp, sizeof(temp));
 }
 
 void Input()
@@ -51,8 +53,8 @@ void Input()
 }
 
 int bfs(int x, int y)
-{	
-	queue<pair<int,int>> q;
+{
+	queue<pair<int, int>> q;
 	q.push({ x, y });
 	visited[x][y] = true;
 	vector<pair<int, int>> v;
@@ -71,7 +73,7 @@ int bfs(int x, int y)
 			int ny = cy + dy[i];
 			if (nx < 0 || ny < 0 || nx>4 || ny>4) continue;
 			if (temp_map[x][y] == temp_map[nx][ny] && !visited[nx][ny])
-			{				
+			{
 				visited[nx][ny] = true;
 				q.push({ nx,ny });
 				v.push_back({ nx,ny });
@@ -80,14 +82,14 @@ int bfs(int x, int y)
 	}
 	if (cnt < 3)
 	{
-		cnt = 0;		
+		cnt = 0;
 		return cnt;
 	}
 	if (mode == 1)
 	{
-		for(auto& s :v)	delPoints.push_back(s);
+		for (auto& s : v)	delPoints.push_back(s);
 	}
-	
+
 	return cnt;
 }
 
@@ -108,24 +110,38 @@ int FindMaxVal()
 	return ret;
 }
 
+void PrintArr(int arr[5][5])
+{
+	for (int i = 0; i < 5; i++)
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			printf("%d ", arr[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+
 void Simul()
 {
-	// 1 연결된 유물수가 많은 것 찾기
-	// 1-2 여러가지 일 경우 회전중심의 col값이 작은걸로
 	int val = 0;
 	int temp_ans[5][5];
+	// 1-1 여러가지 일 경우 회전한 각도가 작은걸로
 	for (int i = 1; i < 4; i++)
 	{
 		memcpy(temp_map, map, sizeof(map));
-		// 1-3 col이 같다면 row가 작은걸로
+		// 1-2 여러가지 일 경우 회전중심의 col값이 작은걸로
 		for (int j = 1; j < 4; j++)
-		{			
-			// 1-1 여러가지 일 경우 회전한 각도가 작은걸로
+		{
+			// 1-3 col이 같다면 row가 작은걸로
 			for (int k = 1; k < 4; k++)
-			{				
+			{
+				memcpy(temp_map, map, sizeof(map));
 				Rotate(k, j, i);
+				//PrintArr(temp_map);
 				
-				// 유물 최대값 찾기
+				// 1 연결된 유물수가 많은 것 찾기
 				int res = FindMaxVal();
 
 				if (res > val)
@@ -134,16 +150,14 @@ void Simul()
 					// 찾은 최대의 값이 있는 조건 맵을 원본 맵에 적용
 					memcpy(temp_ans, temp_map, sizeof(temp_map));
 				}
-			}			
+			}
 		}
 	}
-	if(val>0)	memcpy(map, temp_ans, sizeof(map));
+	if (val > 0)	memcpy(map, temp_ans, sizeof(map));
 }
 
 void RemoveItem()
 {
-	
-
 	for (auto& s : delPoints)
 	{
 		map[s.first][s.second] = -9999;
@@ -155,7 +169,7 @@ void RefillItem()
 {
 	for (int i = 0; i < 5; i++)
 	{
-		for (int j = 4; j >= 0 ; j--)
+		for (int j = 4; j >= 0; j--)
 		{
 			if (map[j][i] == -9999)
 			{
@@ -188,7 +202,7 @@ void Solution()
 		if (ans > 0)
 		{
 			printf("%d ", ans);
-		}		
+		}
 		ans = 0;
 		mode = 0;
 	}
@@ -196,8 +210,8 @@ void Solution()
 
 int main()
 {
-	Input();	
+	Input();
 	Solution();
-	
+
 	return 0;
 }
