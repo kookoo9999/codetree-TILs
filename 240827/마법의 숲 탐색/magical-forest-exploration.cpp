@@ -23,8 +23,7 @@ void Init_map()
 	{
 		for (int j = 0; j < c; j++)
 		{
-			map[i][j] = 0;
-			temp_map[i][j] = 0;
+			map[i][j] = 0;			
 		}
 	}
 }
@@ -45,6 +44,7 @@ void Input()
 		g.num = i + 1;
 		golems.push_back(g);
 	}
+	
 	Init_map();
 }
 
@@ -287,30 +287,47 @@ int bfs(Golem& now_g)
 			int ny = cy + dy[i];
 			if (nx < 0 || ny < 0 || nx >= r || ny >= c) continue;
 
-			// 다른골렘 연결 확인			
-			if (map[nx][ny] > 0 && map[nx][ny] <= k && !visited[nx][ny])
+			if ((map[cx][cy] == map[nx][ny]) && !visited[nx][ny])
 			{
-				if (map[cx][cy] == map[nx][ny])
+				visited[nx][ny] = true;
+				q.push({ nx,ny });
+			}
+			if(map[nx][ny]>0 && !visited[nx][ny])
+			{				
+				int now = map[cx][cy] - 1;
+				int exit_x = golems[now].x + dx[golems[now].dir];
+				int exit_y = golems[now].y + dy[golems[now].dir];
+				if (cx == exit_x && cy == exit_y)
 				{
 					visited[nx][ny] = true;
 					q.push({ nx,ny });
-				}
-				else 
-				{
-					if (map[nx][ny] > 0)
-					{
-						int now = map[cx][cy] - 1;
-						int exit_x = golems[now].x + dx[golems[now].dir];
-						int exit_y = golems[now].y + dy[golems[now].dir];
-						if (cx == exit_x && cy == exit_y)
-						{
-							visited[nx][ny] = true;
-							q.push({ nx,ny });
-						}
-					}
-					
 				}				
-			}			
+			}
+
+			//// 다른골렘 연결 확인			
+			//if (map[nx][ny] > 0 && map[nx][ny] <= k && !visited[nx][ny])
+			//{
+			//	if (map[cx][cy] == map[nx][ny])
+			//	{
+			//		visited[nx][ny] = true;
+			//		q.push({ nx,ny });
+			//	}
+			//	else 
+			//	{
+			//		//if (map[nx][ny] > 0)
+			//		{
+			//			int now = map[cx][cy] - 1;
+			//			int exit_x = golems[now].x + dx[golems[now].dir];
+			//			int exit_y = golems[now].y + dy[golems[now].dir];
+			//			if (cx == exit_x && cy == exit_y)
+			//			{
+			//				visited[nx][ny] = true;
+			//				q.push({ nx,ny });
+			//			}
+			//		}
+			//		
+			//	}				
+			//}			
 		}
 	}
 	return ret+1;
