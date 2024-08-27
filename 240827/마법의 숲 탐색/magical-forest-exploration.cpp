@@ -23,8 +23,8 @@ void Init_map()
 	{
 		for (int j = 0; j < c; j++)
 		{
-			map[i][j] = -0;
-			temp_map[i][j] = -0;
+			map[i][j] = 0;
+			temp_map[i][j] = 0;
 		}
 	}
 }
@@ -41,7 +41,7 @@ void Input()
 		
 		g.dir = dirs;
 		g.y = cols-1;
-		g.x = 0;
+		g.x = -2;
 		g.num = i + 1;
 		golems.push_back(g);
 	}
@@ -58,7 +58,9 @@ bool Check_below(Golem &now_g)
 	y3 = now_g.y + 1; x3 = now_g.x + 1; // 오른쪽
 
 	if (x2 >= r) return false;
-	if (map[x1][y1] != 0 || map[x2][y2] != 0 || map[x3][y3] != 0 ) return false;
+	if (map[x1][y1] > 0 && map[x1][y1] <= k) return false;
+	if (map[x2][y2] > 0 && map[x2][y2] <= k) return false;
+	if (map[x3][y3] > 0 && map[x3][y3] <= k) return false;
 	
 	//now_g.y += 1;
 	return true;
@@ -111,7 +113,8 @@ bool Check_left(Golem& now_g)
 	y5 = now_g.y - 1; x5 = now_g.x + 2;
 	
 	if (x5 >= r) return false;
-	if (map[x4][y4] != 0 || map[x5][y5] != 0) return false;
+	if (map[x4][y4] > 0 && map[x4][y4] <= k) return false;
+	if (map[x5][y5] > 0 && map[x5][y5] <= k) return false;
 
 	return true;
 }
@@ -297,7 +300,7 @@ int bfs(Golem& now_g)
 
 bool Check_range(Golem& now_g)
 {
-	if (now_g.x == 0) return false;
+	if (now_g.x <= 0) return false;
 	return true;
 }
 
