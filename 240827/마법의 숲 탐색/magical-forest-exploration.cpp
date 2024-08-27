@@ -339,7 +339,9 @@ void Simul()
 		else
 		{
 			// 최대 행 찾기
-			if (breset || Check_exit_connect(golems[i]))
+			ans += bfs(golems[i]);
+			
+			/*if (breset || Check_exit_connect(golems[i]))
 			{
 				ans += bfs(golems[i]);
 				breset = false;
@@ -347,7 +349,7 @@ void Simul()
 			else
 			{
 				ans += golems[i].x + 2;
-			}
+			}*/
 		}
 		
 	}
