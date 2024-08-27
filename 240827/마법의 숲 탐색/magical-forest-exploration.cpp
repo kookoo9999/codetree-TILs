@@ -269,6 +269,7 @@ int bfs(Golem& now_g)
 	int y = now_g.y;
 	int ret = -1;
 	queue<pair<int, int>> q;
+
 	bool visited[70][70] = { false, };
 	visited[x][y] = true;
 	q.push({ x,y });
@@ -286,13 +287,30 @@ int bfs(Golem& now_g)
 			int ny = cy + dy[i];
 			if (nx < 0 || ny < 0 || nx >= r || ny >= c) continue;
 
-			// 출구와 연결된 것인지 확인			
-			if (map[nx][ny] != -0 && !visited[nx][ny])
+			// 다른골렘 연결 확인			
+			if (map[nx][ny] > 0 && map[nx][ny] <= k && !visited[nx][ny])
 			{
-				visited[nx][ny] = true;
-				q.push({ nx,ny });
-			}
-			
+				if (map[cx][cy] == map[nx][ny])
+				{
+					visited[nx][ny] = true;
+					q.push({ nx,ny });
+				}
+				else 
+				{
+					if (map[nx][ny] > 0)
+					{
+						int now = map[cx][cy] - 1;
+						int exit_x = golems[now].x + dx[golems[now].dir];
+						int exit_y = golems[now].y + dy[golems[now].dir];
+						if (cx == exit_x && cy == exit_y)
+						{
+							visited[nx][ny] = true;
+							q.push({ nx,ny });
+						}
+					}
+					
+				}				
+			}			
 		}
 	}
 	return ret+1;
