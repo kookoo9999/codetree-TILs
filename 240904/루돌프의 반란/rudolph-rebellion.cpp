@@ -41,7 +41,7 @@ struct Cmp {
 vector<Info>santa;
 
 bool isIn(int y, int x) {
-	return y >= 1 && x >= 1 && y <= n && x <= n;
+	return y >= 0 && x >= 0 && y < n && x < n;
 }
 
 void interaction(int y, int x, int num, int dir, int kind) {
@@ -295,12 +295,12 @@ int main() {
 	cin >> n >> m >> p >> c >> d;
 	santa.resize(p + 1);
 	cin >> ry >> rx;
-	rx-=1; ry-=1;
+	ry -= 1; rx -= 1;
 	map[ry][rx] = -1;
 	for (int i = 0; i < p; i++) {
 		int num, py, px;
 		cin >> num >> py >> px;
-		px -=1; py-=1;
+		px -= 1; py -= 1;
 		santa[num] = { py,px,0,0,false };
 		map[py][px] = num;
 	}
