@@ -14,7 +14,7 @@ int dead_cnt;
 // 상,우,하,좌 대각
 int dy[8] = { -1,0,1,0,1,1,-1,-1 };
 int dx[8] = { 0,1,0,-1,1,-1,-1,1 };
-int map[52][52];
+int map[51][51];
 struct Info {
 	int y, x, score, stun_day;
 	bool dead;
@@ -295,10 +295,12 @@ int main() {
 	cin >> n >> m >> p >> c >> d;
 	santa.resize(p + 1);
 	cin >> ry >> rx;
+	rx-=1; ry-=1;
 	map[ry][rx] = -1;
 	for (int i = 0; i < p; i++) {
 		int num, py, px;
 		cin >> num >> py >> px;
+		px -=1; py-=1;
 		santa[num] = { py,px,0,0,false };
 		map[py][px] = num;
 	}
