@@ -1,494 +1,326 @@
-// 1시간 15분
-#include <iostream>
-#include <vector>
-#include <queue>
-#include <math.h>
-#include <memory.h>
-#include <algorithm>
+#include<iostream>
+#include<algorithm>
+#include<vector>
+#include<queue>
+#include<climits>
+#include<cmath>
+#define MAX INT_MAX
 using namespace std;
 
-int map[50][50]; // 0 : empty  , n : santa 
-int distmap[50][50];
-int n, m, p, c, d, rx, ry, dead_cnt = 0;
-// 상 우상 우 우하 하 좌하 좌 좌상
-//  0   1  2   3  4   5   6  7
-int ru_x[8] = { -1,-1,0,1,1,1,0,-1 };
-int ru_y[8] = { 0,1,1,1,0,-1,-1,-1 };
-int dx[4] = { -1,0,1,0 };
-int dy[4] = { 0,1,0,-1 };
 
-struct Santa
-{
-    int x, y, num, score = 0, sleep = 0;
-    bool alive = true;
+int n, m, p, c, d;
+int ry, rx;
+int dead_cnt;
+// 상,우,하,좌 대각
+int dy[8] = { -1,0,1,0,1,1,-1,-1 };
+int dx[8] = { 0,1,0,-1,1,-1,-1,1 };
+int map[52][52];
+struct Info {
+	int y, x, score, stun_day;
+	bool dead;
 };
 
-vector<Santa> Santas;
+struct Pos {
+	int y, x, dis;
+};
 
-void ResetMap()
-{
-    for (int i = 0; i < n; i++)
-    {
-        for (int j = 0; j < n; j++)
-        {
-            map[i][j] = 0;
-            distmap[i][j] = 0;
-        }
-    }
+struct Cmp {
+	bool operator()(Pos a, Pos b) {
+		if (a.dis != b.dis) {
+			return a.dis > b.dis;
+		}
+		else if (a.y != b.y) {
+			return a.y < b.y;
+		}
+		else {
+			return a.x < b.x;
+		}
+	}
+};
+
+vector<Info>santa;
+
+bool isIn(int y, int x) {
+	return y >= 1 && x >= 1 && y <= n && x <= n;
 }
 
-void Input()
-{
-    cin >> n >> m >> p >> c >> d;
-    cin >> rx >> ry;
-    rx -= 1; ry -= 1;
-    ResetMap();
-    Santas.resize(p);
-    for (int i = 0; i < p; i++)
-    {
-        int num, x, y;
-        cin >> num >> x >> y;
-        x -= 1; y -= 1;
-        map[x][y] = num;        
-        Santas[num-1] = { x,y,num };
-        
-    }
+void interaction(int y, int x, int num, int dir, int kind) {
+	// 현재 그 지점으로 튕겨져 날아오는 산타 번호 num
+	// 기존에 그 지점에 있던 산타 번호 now_num
+	// 그 지점 (y,x)
+	int now_num = map[y][x];
+	map[y][x] = num;
+	santa[num].y = y;
+	santa[num].x = x;
+	int ny = y;
+	int nx = x;
+	if (kind == 1) {
+		ny -= dy[dir];
+		nx -= dx[dir];
+	}
+	else {
+		ny += dy[dir];
+		nx += dx[dir];
+	}
+	if (!isIn(ny, nx)) {
+		santa[now_num].dead = true;
+		return;
+	}
+	else {
+		if (map[ny][nx] > 0) {
+			interaction(ny, nx, now_num, dir, kind);
+		}
+		else {
+			map[ny][nx] = now_num;
+			santa[now_num].y = ny;
+			santa[now_num].x = nx;
+			return;
+		}
+	}
 }
 
-int GetDistance(int x1, int y1, int x2, int y2)
-{
-    int ret = 0;
-    ret = pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2);
+bool func() {
 
-    return ret;
+	// 루돌프 이동
+	priority_queue<Pos, vector<Pos>, Cmp>rudol_dis;
+	for (int i = 1; i <= p; i++) {
+		Info now_santa = santa[i];
+		if (now_santa.dead)continue;
+		int dis = pow(ry - now_santa.y, 2) + pow(rx - now_santa.x, 2);
+		rudol_dis.push({ now_santa.y,now_santa.x,dis });
+	}
+
+	// 8방향에 대해 이동 시 가장 거리가 가까워지는 지점 찾기
+	if (rudol_dis.empty())return false;
+	Pos selectedSanta = rudol_dis.top();
+	int dis = MAX;
+	int rdir = 0;
+	int final_ry = 0;
+	int final_rx = 0;
+	for (int i = 0; i < 8; i++) {
+		int temp_y = ry + dy[i];
+		int temp_x = rx + dx[i];
+		if (!isIn(temp_y, temp_x))continue;
+		int temp_dis = pow(temp_y - selectedSanta.y, 2) + pow(temp_x - selectedSanta.x, 2);
+		if (dis > temp_dis) {
+			final_ry = temp_y;
+			final_rx = temp_x;
+			dis = temp_dis;
+			rdir = i;
+		}
+	}
+
+	// 루돌프 이동 후 산타가 있는지 확인
+	map[ry][rx] = 0;
+	// 있으면
+	if (map[final_ry][final_rx] > 0) {
+		// 튕겨나간 산타의 정보
+		int santa_y = final_ry + c * dy[rdir];
+		int santa_x = final_rx + c * dx[rdir];
+		int santa_num = map[final_ry][final_rx];
+		// C 획득및 기절
+		santa[santa_num].score += c;
+		santa[santa_num].stun_day = 2;
+		// 경기장 밖이면 아웃
+		if (!isIn(santa_y, santa_x)) {
+			santa[santa_num].dead = true;
+			dead_cnt++;
+			if (dead_cnt == p) {
+				return false;
+			}
+		}
+
+		// 경기장 안이면
+		else {
+			// 뒤에 산타 상호작용 확인
+			if (map[santa_y][santa_x] > 0) {
+				// 그 산타 번호 저장
+				int temp_santa_num = map[santa_y][santa_x];
+				// 현재 산타 착지
+				map[santa_y][santa_x] = santa_num;
+				santa[santa_num].y = santa_y;
+				santa[santa_num].x = santa_x;
+				// 그 다음 지점도 확인하여 연쇄작용
+				int nny = santa_y + dy[rdir];
+				int nnx = santa_x + dx[rdir];
+				// 다음 지점이 장외라면 사망 처리 후 진행 x
+				if (!isIn(nny, nnx)) {
+					santa[temp_santa_num].dead = true;
+					dead_cnt++;
+					if (dead_cnt == p) {
+						return false;
+					}
+				}
+				// 산타가 뒤에 또 있었다면?
+				if (map[nny][nnx] > 0) {
+					// 상호작용 실시
+					interaction(nny, nnx, temp_santa_num, rdir, 2);
+				}
+				// 없으면 한칸 뒤로 저장 
+				else {
+					map[nny][nnx] = temp_santa_num;
+					santa[temp_santa_num].y = nny;
+					santa[temp_santa_num].x = nnx;
+				}
+			}
+			// 산타의 다음 지점에 다른 산타 없으면 그냥 저장
+			else {
+				map[santa_y][santa_x] = santa_num;
+				santa[santa_num].y = santa_y;
+				santa[santa_num].x = santa_x;
+			}
+		}
+
+	}
+	// 해당 지점 루돌프 이동
+	ry = final_ry;
+	rx = final_rx;
+	map[ry][rx] = -1;
+
+
+	// 산타 이동
+	for (int i = 1; i <= p; i++) {
+		Info now_santa = santa[i];
+		// 죽었거나 기절한 산타는 패스
+		if (now_santa.dead || now_santa.stun_day > 0)continue;
+		int sy = now_santa.y;
+		int sx = now_santa.x;
+		int sdis = pow(sy - ry, 2) + pow(sx - rx, 2);
+		int tempdis = MAX;
+		int to_y = 0, to_x = 0;
+		int sdir = 0;
+		bool can_move = false;
+		for (int j = 0; j < 4; j++) {
+			int ny = sy + dy[j];
+			int nx = sx + dx[j];
+			// 게임판 밖 또는 산타가 이미 있는 경우
+			if (!isIn(ny, nx) || map[ny][nx] > 0)continue;
+			int ndis = pow(ny - ry, 2) + pow(nx - rx, 2);
+			// 움직여도 가까워지지 않는 경우
+			if (sdis <= ndis)continue;
+			if (tempdis > ndis) {
+				// 상우하좌 순서로 방향 배열 설정
+				// 만약 동일한 값이 저장된 경우
+				// 갱신 안하므로 상우좌하 순서로 방향 고정되어있음
+				to_y = ny;
+				to_x = nx;
+				sdir = j;
+				tempdis = ndis;
+				can_move = true;
+			}
+		}
+		// 움직일 수 없거나, 가까워질 수 없다면 이동 x
+		if (!can_move)continue;
+
+		// 이동
+		map[sy][sx] = 0;
+		// 루돌프가 있다면?
+		if (map[to_y][to_x] == -1) {
+			// D 획득 및 기절
+			santa[i].score += d;
+			santa[i].stun_day = 2;
+			// (to_y,to_x) 기준으로 D만큼 밀려남
+			int ny = to_y - d * dy[sdir];
+			int nx = to_x - d * dx[sdir];
+			// 사망했나?
+			if (!isIn(ny, nx)) {
+
+				santa[i].dead = true;
+				dead_cnt++;
+				if (dead_cnt == p) {
+					return false;
+				}
+				map[sy][sx] = 0;
+				continue;
+			}
+			// 살았다면?
+			// 만약 산타가 그 곳에 있으면?
+			if (map[ny][nx] > 0) {
+
+				// 그 산타 번호 저장
+				int temp_santa_num = map[ny][nx];
+				// 현재 산타 착지
+				map[sy][sx] = 0;
+				map[ny][nx] = i;
+				santa[i].y = ny;
+				santa[i].x = nx;
+				// 그 다음 지점도 확인하여 연쇄작용
+				int nny = ny - dy[sdir];
+				int nnx = nx - dx[sdir];
+				// 다음 지점이 장외라면 사망 처리 후 진행 x
+				if (!isIn(nny, nnx)) {
+					santa[temp_santa_num].dead = true;
+					dead_cnt++;
+					if (dead_cnt == p) {
+						return false;
+					}
+					continue;
+				}
+				// 산타가 뒤에 또 있었다면?
+				if (map[nny][nnx] > 0) {
+					// 상호작용 실시
+					interaction(nny, nnx, temp_santa_num, sdir, 1);
+				}
+				// 없으면 한칸 뒤로 저장 
+				else {
+					map[nny][nnx] = temp_santa_num;
+					santa[temp_santa_num].y = nny;
+					santa[temp_santa_num].x = nnx;
+				}
+
+			}
+			// 산타가 없으면 그냥 착지
+			else {
+				map[sy][sx] = 0;
+				map[ny][nx] = i;
+				santa[i].y = ny;
+				santa[i].x = nx;
+			}
+		}
+		// 루돌프가 없다면 그냥 이동
+		else {
+			map[sy][sx] = 0;
+			map[to_y][to_x] = i;
+			santa[i].y = to_y;
+			santa[i].x = to_x;
+		}
+
+	}
+
+	return true;
 }
 
-void FindSanta(int x, int y)
-{
+int main() {
 
-    queue<pair<int, pair<int, int>>> q;
-    bool visited[50][50] = { false, };
-    q.push({ 0,{x, y} });
-    visited[x][y] = true;
+	cin >> n >> m >> p >> c >> d;
+	santa.resize(p + 1);
+	cin >> ry >> rx;
+	map[ry][rx] = -1;
+	for (int i = 0; i < p; i++) {
+		int num, py, px;
+		cin >> num >> py >> px;
+		santa[num] = { py,px,0,0,false };
+		map[py][px] = num;
+	}
 
-    for (int i = 0; i < n; i++)
-    {
-        for (int j = 0; j < n; j++)
-        {
-            distmap[i][j] = 0;
-        }
-    }
+	for (int i = 0; i < m; i++) {
+		for (int j = 1; j <= p; j++) {
+			if (santa[j].stun_day > 0) {
+				santa[j].stun_day--;
+			}
+		}
+		if (!func()) {
+			break;
+		}
+		for (int j = 1; j <= p; j++) {
+			if (!santa[j].dead) {
+				santa[j].score++;
+			}
+		}
+	}
+	for (int i = 1; i <= p; i++) {
+		cout << santa[i].score << " ";
+	}
 
-    while (!q.empty())
-    {
-        int cx = q.front().second.first;
-        int cy = q.front().second.second;
-        int cnt = q.front().first;
-        q.pop();
-        if (map[cx][cy] != 0) distmap[cx][cy] = cnt;
-
-        for (int i = 0; i < 8; i++)
-        {
-            int nx = cx + ru_x[i];
-            int ny = cy + ru_y[i];
-
-            if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
-            if (!visited[nx][ny])
-            {
-                q.push({ cnt + 1,{ nx,ny} });
-                visited[nx][ny] = true;
-            }
-        }
-    }
-}
-
-int Change_dir(bool rudol, int n)
-{
-    if (rudol)
-    {
-        switch (n)
-        {
-        case 0:
-            return 4;
-            break;
-        case 1:
-            return 5;
-            break;
-        case 2:
-            return 6;
-            break;
-        case 3:
-            return 7;
-            break;
-        case 4:
-            return 0;
-            break;
-        case 5:
-            return 1;
-            break;
-        case 6:
-            return 2;
-            break;
-        case 7:
-            return 3;
-            break;
-        default:
-            break;
-        }
-    }
-    else
-    {
-        switch (n)
-        {
-        case 0:
-            return 2;
-            break;
-        case 1:
-            return 3;
-            break;
-        case 2:
-            return 0;
-            break;
-        case 3:
-            return 1;
-            break;
-        default:
-            break;
-        }
-    }
-}
-
-void Interupt(int x,int y,int num,int dir,int kind)
-{
-    int now_num = map[x][y]-1;
-    map[x][y] = num+1;
-    Santas[num].y = y;
-    Santas[num].x = x;
-    int ny = y;
-    int nx = x;
-    
-    if (kind == 1) 
-    {
-        ny += dy[dir];
-        nx += dx[dir];
-    }
-    else 
-    {
-        ny += ru_x[dir];
-        nx += ru_y[dir];
-    }
-
-    if (nx<0 || ny<0 ||nx>=n || ny>=n)
-    {
-        Santas[now_num].alive = false;
-        return;
-    }
-
-    else {
-        if (map[nx][ny] > 0) {
-            Interupt(ny, nx, now_num, dir,kind);
-        }
-        else {
-            map[ny][nx] = now_num+1;
-            Santas[now_num].y = ny;
-            Santas[now_num].x = nx;
-            return;
-        }
-    }
-}
-
-void Update_Rudolph(int idx)
-{
-    int min = 9999;
-    int dir = 0;
-    int tox = Santas[idx].x;
-    int toy = Santas[idx].y;
-    for (int i = 0; i < 8; i++)
-    {
-        int nx = rx + ru_x[i];
-        int ny = ry + ru_y[i];
-
-        int temp = GetDistance(nx+1, ny+1, tox+1, toy+1);
-        if (temp < min)
-        {
-            dir = i;
-            min = temp;
-        }
-    }
-    map[rx][ry] = 0;
-    int final_rx = rx + ru_x[dir];
-    int final_ry = ry + ru_y[dir];    
-
-    // 산타가 있으면
-    if (map[final_rx][final_ry] > 0)
-    {
-        // 산타가 갈 위치 
-        int sx = final_rx + c * ru_x[dir];
-        int sy = final_ry + c * ru_y[dir];
-
-        // 밀려난 산타의 번호
-        int sanNum = map[final_rx][final_ry]-1;
-        
-        //점수 획득 및 기절
-        Santas[sanNum].score += c;
-        Santas[sanNum].sleep += 2;
-
-        // 맵밖이면 사망
-        if (sx < 0 || sy < 0 || sx >= n || sy >= n)
-        {
-            Santas[sanNum].alive = false;
-            dead_cnt++;
-            if (dead_cnt == p)
-            {
-                for (int idx = 0; idx < p; idx++)
-                {
-                    printf("%d ", Santas[idx].score);
-                }
-                exit(1);
-            }
-        }
-        // 안 일경우
-        else
-        {
-            if (map[sx][sy] > 0)
-            {
-                int tempNum = map[sx][sy]-1;
-                map[sx][sy] = sanNum+1;
-                Santas[sanNum].x = sx;
-                Santas[sanNum].y = sy;
-
-                // 그다음 위치에 산타확인
-                int nx = sx + ru_x[dir];
-                int ny = sy + ru_y[dir];
-                                
-                if (nx < 0 || ny < 0 || nx >= n || ny >= n)
-                {
-                    Santas[tempNum].alive = false;
-                    dead_cnt++;
-                    if (dead_cnt == p)
-                    {
-                        for (int idx = 0; idx < p; idx++)
-                        {
-                            printf("%d ", Santas[idx].score);
-                        }
-                        exit(1);
-                    }
-                }
-
-                // 그곳에 또 산타가 있다면
-                if (map[nx][ny] > 0)
-                {
-                    //연쇄작용
-                    Interupt(nx, ny, tempNum, dir, 2);
-                }
-                // 없으면
-                else
-                {
-                    map[nx][ny] = tempNum+1;
-                    Santas[tempNum].x = nx;
-                    Santas[tempNum].y = ny;
-                }
-            }
-            // 현재의 산타 다음에 다른산타 없을때
-            else
-            {
-                map[sx][sy] = sanNum+1;
-                Santas[sanNum].x = sx;
-                Santas[sanNum].y = sy;
-            }
-        }
-    }    
-    rx = final_rx;
-    ry = final_ry;
-    map[rx][ry] = -1;
-}
-
-void Move_Rudolph()
-{
-    int min = 9999;
-    // 가까운 산타 찾기
-    FindSanta(rx, ry);
-
-    // 8방향 찾기
-    int minSanta = 0;
-    for (int i = 0; i < p; i++)
-    {
-        if (Santas[i].alive)
-        {            
-            if (distmap[Santas[i].x][Santas[i].y] < min)
-            {
-                min = distmap[Santas[i].x][Santas[i].y];
-                minSanta = i + 1;
-            }
-            else if (distmap[Santas[i].x][Santas[i].y] == min)
-            {
-                if (Santas[i].x > Santas[minSanta - 1].x)
-                {
-                    min = distmap[Santas[i].x][Santas[i].y];
-                    minSanta = i + 1;
-                }
-                else if(Santas[i].x == Santas[minSanta - 1].x)
-                {
-                    if (Santas[i].y > Santas[minSanta - 1].y)
-                    {
-                        min = distmap[Santas[i].x][Santas[i].y];
-                        minSanta = i + 1;
-                    }
-                }
-            }
-        }
-    }
-    // 해당방향으로 움직임
-    Update_Rudolph(minSanta - 1);
-
-}
-
-void Move_Santa()
-{
-    for (int idx = 0; idx < p; idx++)
-    {
-        // 움직일수 없는 경우 제외
-        if (!Santas[idx].alive || Santas[idx].sleep > 0) continue;
-        int cx = Santas[idx].x;
-        int cy = Santas[idx].y;
-        int min = GetDistance(cx + 1, cy + 1, rx + 1, ry + 1);
-        int dir = -1;
-        int to_x, to_y;
-        bool canGo = false;
-        for (int i = 0; i < 4; i++)
-        {
-            int nx = cx + dx[i];
-            int ny = cy + dy[i];
-            if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
-            int res = GetDistance(nx+1, ny+1, rx+1, ry+1);            
-            if (res < min && map[nx][ny]<1)
-            {
-                min = res;
-                dir = i;
-            }
-        }
-        if (dir > -1)
-        {
-            map[cx][cy] = 0;
-            to_x =  Santas[idx].x + dx[dir];
-            to_y = Santas[idx].y + dy[dir];            
-            canGo = true;
-        }
-
-        if (!canGo) continue;
-
-        // 루돌프가 있으면 충돌
-        if (to_x == rx && to_y == ry)
-        {
-            // 점수 추가
-            Santas[idx].score += d;
-            Santas[idx].sleep += 2;
-            dir = Change_dir(false, dir);
-
-            int nx = to_x + d * dx[dir];
-            int ny = to_y + d * dy[dir];
-
-            if (nx < 0 || ny < 0 || nx >= n || ny >= n)
-            {
-                dead_cnt++;
-                Santas[idx].alive = false;
-                if (dead_cnt == p)
-                {
-                    for (int i = 0; i < p; i++)
-                    {
-                        printf("%d ", Santas[i].score);
-                    }
-                    exit(1);
-                }
-                map[cx][cy] = 0;
-                continue;
-            }
-
-            if (map[nx][ny] > 0)
-            {
-                int temp_num = map[nx][ny] - 1;
-                map[cx][cy] = 0;
-                map[nx][ny] = idx + 1;
-                Santas[idx].x = nx;
-                Santas[idx].y = ny;
-
-                int nnx = nx + dx[dir];
-                int nny = ny + dy[dir];
-
-                if (nx < 0 || ny < 0 || nx >= n || ny >= n)
-                {
-                    Santas[temp_num].alive = false;
-                    dead_cnt++;
-                    if (dead_cnt == p)
-                    {
-                        for (int i = 0; i < p; i++)
-                        {
-                            printf("%d ", Santas[i].score);
-                        }
-                        exit(1);
-                    }
-                    continue;
-                }
-                if (map[nnx][nny] > 0)
-                {
-                    Interupt(nnx, nny, temp_num, dir, 1);
-                }
-                else
-                {
-                    map[nnx][nny] = temp_num+1;
-                    Santas[temp_num].x = nnx;
-                    Santas[temp_num].y = nny;
-                }
-            }
-            else
-            {
-                map[cx][cy] = 0;
-                map[nx][ny] = idx + 1;
-                Santas[idx].x = nx;
-                Santas[idx].y = ny;
-            }
-        }
-        else
-        {
-            map[cx][cy] = 0;
-            map[to_x][to_y] = idx+1;
-            Santas[idx].x = to_x;
-            Santas[idx].y = to_y;
-        }
-    }
-    
-}
-
-
-void Simul()
-{
-    for (int i = 0; i < m; i++)
-    {
-        for (int j = 0; j < p; j++)
-        {
-            if (Santas[j].sleep > 0 && Santas[j].alive) Santas[j].sleep--;
-        }
-
-        Move_Rudolph();
-        Move_Santa();
-        
-        for (int j = 0; j < p; j++)
-        {
-            if (Santas[j].alive) Santas[j].score++;
-        }
-    }
-
-    for (int i = 0; i < p; i++)
-    {
-        printf("%d ", Santas[i].score);
-    }
-}
-
-int main()
-{
-    memset(map, -1, sizeof(map));
-    memset(distmap, -1, sizeof(distmap));
-    Input();
-    Simul();
-    return 0;
+	return 0;
 }
