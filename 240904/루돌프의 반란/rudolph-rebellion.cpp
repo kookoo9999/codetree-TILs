@@ -14,7 +14,7 @@ int dead_cnt;
 // 상,우,하,좌 대각
 int dy[8] = { -1,0,1,0,1,1,-1,-1 };
 int dx[8] = { 0,1,0,-1,1,-1,-1,1 };
-int map[51][51];
+int map[52][52];
 struct Info {
 	int y, x, score, stun_day;
 	bool dead;
