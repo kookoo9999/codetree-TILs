@@ -128,7 +128,7 @@ bool func() {
 			if (dead_cnt == p) {
 				return false;
 			}
-			break;
+			
 		}
 
 		// 경기장 안이면
