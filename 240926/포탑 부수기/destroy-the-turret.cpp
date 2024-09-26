@@ -228,7 +228,11 @@ void LaserAttack(int now)
 		q.pop();
 
 		if (cx == sx && cy == sy) break;
-		if (flag) map[cx][cy] -= (damage / 2);
+		if (flag)
+		{
+			map[cx][cy] -= (damage / 2);
+			act[cx][cy] = true;
+		}
 
 		q.push({ distx[cx][cy],disty[cx][cy] });		
 		flag = true;
