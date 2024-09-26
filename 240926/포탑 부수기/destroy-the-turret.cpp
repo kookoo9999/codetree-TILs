@@ -6,7 +6,9 @@ using namespace std;
 
 int dx[] = {0,1,0,-1,1,1,-1,-1};
 int dy[] = {1,0,-1,0,1,-1,-1,1};
+
 bool act[11][11] = { false, };
+
 int timemap[11][11] = { 0, };
 int map[11][11] = { 0, };
 int dist[11][11] = { 0, };
@@ -36,11 +38,13 @@ void FindAttacker()
 		for (int j = M; j >= 1; j--)
 		{
 			if (map[i][j] < 1) continue;
+
 			// 공격력 가장 약한놈
 			if (map[i][j] < tempMax)
 			{
 				tempMax = map[i][j];
 				tempx = i; tempy = j;
+				tempTime = timemap[i][j];
 			}
 			// 같으면
 			else if(map[i][j]==tempMax)
@@ -60,6 +64,7 @@ void FindAttacker()
 					{
 						tempMax = map[i][j];
 						tempx = i; tempy = j;
+						tempTime = timemap[i][j];
 					}
 					// 행열 같으면
 					else if (i + j == tempx + tempy)
@@ -69,6 +74,7 @@ void FindAttacker()
 						{
 							tempMax = map[i][j];
 							tempx = i; tempy = j;
+							tempTime = timemap[i][j];
 						}
 					}
 				}
@@ -77,7 +83,7 @@ void FindAttacker()
 		}
 	}
 	sx = tempx; sy = tempy;
-	map[sx][sy] += N + M;
+	
 }
 
 void FindTarget()
@@ -126,8 +132,7 @@ void FindTarget()
 						}
 					}
 				}
-			}
-			
+			}			
 		}
 	}
 	tx = tempx; ty = tempy;
@@ -163,7 +168,7 @@ bool CanLaser()
 			if (ny < 1) ny = M;
 			if (ny > M) ny = 1;
 			if (map[nx][ny] <1) continue;						
-
+			
 			if (!visited[nx][ny])
 			{
 				visited[nx][ny] = true;
@@ -176,37 +181,6 @@ bool CanLaser()
 	}
 	return false;
 }
-bool dvisited[11][11] = { false, };
-bool bcanLaser = false;
-void dfs(int x, int y, int  cnt)
-{
-	if (bcanLaser) return;
-	dvisited[x][y] = true;
-	dist[x][y] = cnt;
-	if (x == tx && y == ty ) 
-	{
-		bcanLaser = true;
-		return;
-	}
-	for (int i = 0; i < 4; i++)
-	{
-		int nx = x + dx[i];
-		int ny = y + dy[i];
-		if (nx < 1) nx = N;
-		if (nx > N) nx = 1;
-		if (ny < 1) ny = M;
-		if (ny > M) ny = 1;
-		if (map[nx][ny]<1) continue;
-		
-
-		if (!dvisited[nx][ny])
-		{			
-			
-			dfs(nx, ny, cnt + 1);
-		}
-	}
-	return;
-}
 
 void LaserAttack(int now)
 {	
@@ -216,11 +190,13 @@ void LaserAttack(int now)
 	{
 		map[tx][ty] -= damage;
 	}
+
 	bool flag = false;
 	int cx = tx; int cy = ty;
 	
 	queue<pair<int, int>> q;
 	q.push({ tx,ty });
+
 	while (!q.empty())
 	{
 		cx = q.front().first;
@@ -237,21 +213,6 @@ void LaserAttack(int now)
 		q.push({ distx[cx][cy],disty[cx][cy] });		
 		flag = true;
 	}
-	
-	// 최단경로 중간의 포탑들 데미지 입음
-	/*for (int i = 1; i <= N; i++)
-	{
-		for (int j = 1; j <= M; j++)
-		{
-			if (i == tx && j == ty) continue;
-			if (dist[i][j] > 0)
-			{
-				map[i][j] -= (damage / 2);
-				
-				act[i][j] = true;
-			}
-		}
-	}*/
 }
 
 void Potan(int now)
@@ -275,8 +236,9 @@ void Potan(int now)
 		if (ny < 1) ny = M;
 		if (ny > M) ny = 1;
 		if (map[nx][ny] < 1) continue;
-		if (nx == sx && ny == sy) continue;
-		map[nx][ny] -= (damage / 2);		
+		if ((nx == sx && ny == sy) || (nx == tx && ny == ty)) continue;
+		if (map[nx][ny] < (damage / 2)) map[nx][ny] = 0;
+		else map[nx][ny] -= (damage / 2);
 		act[nx][ny] = true;
 	}
 }
@@ -284,14 +246,9 @@ void Potan(int now)
 void Attack(int now)
 {	
 	memset(dist, 0, sizeof(dist));
-	memset(dvisited, 0, sizeof(dvisited));
-	
-	act[sx][sy] = true;
-	act[tx][ty] = true;
-	
-	bcanLaser = false;
-	//dfs(sx, sy, 0);
-	
+	memset(distx, 0, sizeof(distx));
+	memset(disty, 0, sizeof(disty));
+	map[sx][sy] += N + M;
 	if (CanLaser())
 	{
 		LaserAttack(now);
@@ -301,7 +258,8 @@ void Attack(int now)
 	{
 		Potan(now);
 	}
-
+	act[sx][sy] = true;
+	act[tx][ty] = true;
 	timemap[sx][sy] = now;	
 }
 
@@ -322,8 +280,10 @@ void Repair()
 
 void Simul()
 {
+	int tttt = 1;
 	for (int time = 1; time <= K; time++)
 	{
+		tttt += 1;
 		memset(act, false, sizeof(act));
 		FindAttacker();
 		FindTarget();
