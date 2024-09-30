@@ -130,15 +130,16 @@ void PlayerMove(int time)
 	for (int i = 1; i <= M; i++)
 	{
 		if (time < i) return;
-		memset(dist, 0, sizeof(dist));
-		memset(distx, 0, sizeof(distx));
-		memset(disty, 0, sizeof(disty));
+		if (IsGoal[i]) return;
 
 		int cx = Player[i].x;
 		int cy = Player[i].y;
 
 		if (cx == -1 && cy == -1) continue;
-		if (IsGoal[i]) continue;
+
+		memset(dist, 0, sizeof(dist));
+		memset(distx, 0, sizeof(distx));
+		memset(disty, 0, sizeof(disty));
 
 		bfs(Store[i].x, Store[i].y,cx,cy,i);
 		
