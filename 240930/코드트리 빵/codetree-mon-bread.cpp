@@ -130,7 +130,7 @@ void PlayerMove(int time)
 	for (int i = 1; i <= M; i++)
 	{
 		if (time < i) return;
-		if (IsGoal[i]) return;
+		if (IsGoal[i]) continue;
 
 		int cx = Player[i].x;
 		int cy = Player[i].y;
@@ -150,10 +150,7 @@ void PlayerMove(int time)
 		if (nx == Store[i].x && ny == Store[i].y)
 		{
 			IsGoal[i] = true;
-			if (CheckAll())
-			{				
-				return;
-			}
+			
 			Dummy.push_back({ nx,ny });
 			DummyIdx.push_back(i);
 		}
@@ -267,6 +264,7 @@ void Simul()
 		if (CheckAll())
 		{
 			cout << time;
+			break;
 		}
 	}
 	
