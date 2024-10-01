@@ -112,6 +112,17 @@ void bfs(int x, int y , int tx,int ty , int nowidx)
 	return;
 }
 
+void InitDist()
+{
+	for (int i = 1; i <= N; i++)
+	{
+		for (int j = 1; j <= N; j++)
+		{
+			dist[i][j] = 9999;
+		}
+	}
+}
+
 bool CheckAll()
 {
 	for (int i = 1; i <= M; i++)
@@ -199,39 +210,43 @@ void SelectBase(int time)
 	{
 		if (time < i) return;
 		if (IsBaseSelected[i]) continue;
-		memset(dist, 0, sizeof(dist));
+		InitDist();
 		SearchBase(Store[i].x, Store[i].y,i);
 		int nowdist = 9999;
 		int select = 0;
-
-		for (int j = 0; j < Base.size(); j++)
-		{			
-			if (Base[j].choose) continue;
-			if (dist[Base[j].x][Base[j].y] < nowdist)
+		int x=N, y=N;
+		for (int j = N; j >= 1; j--)
+		{
+			for (int k = N; k >= 1; k--)
 			{
-				select = j;
-				nowdist = dist[Base[j].x][Base[j].y];
-			}
-			else if (dist[Base[j].x][Base[j].y] == nowdist)
-			{
-				if (Base[j].x < Base[select].x)
+				if (map[j][k] != -1) continue;
+				if (dist[j][k] < nowdist)
 				{
-					select = j;
-					nowdist = dist[Base[j].x][Base[j].y];
+					nowdist = dist[j][k];
+					x = j;
+					y = k;
 				}
-				else if (Base[j].x == Base[select].x)
+				else if (dist[j][k] == nowdist)
 				{
-					if (Base[j].y < Base[select].y)
+					if (j < x)
 					{
-						select = j;
-						nowdist = dist[Base[j].x][Base[j].y];
+						x = j;
+						y = k;
+					}
+					else if (j == x)
+					{
+						if (k < y)
+						{
+							x = j;
+							y = k;
+						}
 					}
 				}
 			}
-		}
+		}		
 
-		Player[i].x = Base[select].x;
-		Player[i].y = Base[select].y;
+		Player[i].x = x;
+		Player[i].y = y;
 		IsBaseSelected[i] = true;
 		Base[select].choose = true;
 		Dummy.push_back({ Player[i].x,Player[i].y });
