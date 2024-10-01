@@ -13,8 +13,8 @@ int dist[16][16];
 int distx[16][16];
 int disty[16][16];
 int canMove[16][16] = { 0, };
-bool IsGoal[16] = { false, };
-bool IsBaseSelected[16] = { false, };
+bool IsGoal[30] = { false, };
+bool IsBaseSelected[30] = { false, };
 
 struct Pos
 {
